@@ -1,63 +1,102 @@
 ---
 name: singapore-condo-research
-description: Research Singapore condo projects with grounded facts and optional URA dataset analysis.
+description: >-
+  Research Singapore condo projects with grounded facts, URA transaction analysis,
+  price trends, budget checks, and peer comparisons.
 ---
 
 # singapore-condo-research
 
-Use this skill when the user asks for condo project research in Singapore, especially requests like:
+Use this skill when the user asks for condo project research in Singapore, such as:
 - "deep dive on <condo name>"
-- "help search for <condo name>"
 - "tell me about <condo name>"
 - "quick facts for <condo name>"
-- "condo analysis for <condo name>"
+- "compare <condo A> vs <condo B>"
+- "can I get a 3BR at <condo> for $X?"
+- "price trend for <condo name>"
 
-## Primary job
+## 1. Quick Facts Lookup
 
-Help users quickly look up and summarize factual condo project information:
-- location
-- district
-- tenure (leasehold/freehold)
-- project type (condo or EC)
-- land parcel sale/launch start (if available)
+For every condo query, start with a concise quick-facts summary:
+
+- Project name
+- Location / street
+- District
+- Tenure (99yr leasehold from YYYY / freehold) and remaining years
+- Project type (private condo or EC; if EC, note MOP/privatisation status)
 - TOP year
-- unit mix by bedroom type (1BR, 2BR, 3BR, 4BR, 5BR)
+- Total units
+- Unit mix by bedroom type with sqft ranges
 
-Always ground outputs in cited source data. If a field cannot be found, explicitly say "not found in available sources" instead of guessing.
+### Data-source priority
 
-## Data-source policy
+1. **use-agently.com** agents (Jina, Exa Search) for initial grounding
+2. **propertyguru.com** or **99.co** project detail pages
+3. **stackedhomes.com** only when a relevant project article exists
+4. Supplementary **web search** for missing fields, with citations
 
-Prioritize sources in this order:
-1. use-agently.com results that pull from agents such as Jina and Exa Search
-2. Direct condo detail pages from:
-   - propertyguru.com
-   - 99.co
-3. stackedhomes.com only when a relevant project article exists
-4. Supplementary web search for missing fields, with citations
+**Never hallucinate** unit mix, tenure, TOP year, or district. If a field cannot be confirmed, say "not found in available sources."
 
-Never hallucinate unit mix, tenure, TOP year, or district. Use only verifiable facts.
+### Data confidence
 
-## Output requirements
+Rate each lookup:
+- **High** — multiple consistent sources
+- **Medium** — one credible source
+- **Low** — partial or incomplete fields
 
-For each condo project query:
-1. Return a concise quick-facts table.
-2. Include unit mix counts (if found), with source links.
-3. Add a "Data confidence" note:
-   - High: multiple consistent sources
-   - Medium: one credible source
-   - Low: partial/incomplete fields
-4. Add "Missing fields" listing anything not confirmed.
+List any **missing fields** explicitly.
 
-## Optional URA-dataset mode
+## 2. Transaction Analysis (when URA data is available)
 
-When the user provides a URA dataset:
-- Ground project facts and analysis primarily on the URA data.
-- If possible, add surrounding-project context (same district and/or similar TOP year), clearly labeled.
-- Use URA-grounded evidence for recommendation requests.
+When the user provides a URA dataset or asks for price/trend analysis:
 
-## Memory and preference handling
+### Price trends
+- Median price and PSF by year for the target unit type
+- YoY growth % to show momentum
+- Flag when sample size is small (< 5 txns in a period)
 
-When user preferences are explicit (for example: preferred table format, preferred comparable-project criteria, or required fields), store them in this folder for reuse:
+### Floor-level breakdown
+- Group transactions into low (01-05), mid (06-10), high (11-15), penthouse (16+)
+- Show price range per band for the most recent year
+
+### Budget feasibility
+- State the user's budget clearly
+- Calculate **budget hit rate** — % of recent transactions (last 12-18 months) within budget
+- Note which floor levels or unit configurations are realistic at that price
+- Use ✅ ⚠️ ❌ markers for quick scanning
+
+## 3. Peer Comparison
+
+When comparing projects or when context would help:
+
+- Match on **same bedroom count AND similar sqft range** (like-for-like)
+- Compare: median price, PSF, lease commencement, remaining tenure, TOP year
+- Present as a compact summary (bullet list for chat platforms, table where supported)
+- Note trade-offs (e.g. newer lease but smaller unit, cheaper PSF but older facilities)
+
+## 4. Output format
+
+Structure findings using these sections as needed (skip sections that don't apply):
+
+- 📋 **Quick Facts** — project basics, tenure, unit mix
+- 📈 **Price Trend** — for target unit type, by year
+- 🏢 **Floor Breakdown** — prices by floor band (recent year)
+- 💰 **Budget Check** — feasibility at stated budget
+- 🔄 **Peer Comparison** — vs similar projects
+- ⚠️ **Caveats** — small sample sizes, data gaps, EC-specific notes
+
+Use emoji markers and keep it scannable. On platforms without table support (Telegram, WhatsApp), use bullet lists.
+
+## 5. EC-specific notes
+
+For Executive Condos:
+- State MOP status (5-year mark from TOP)
+- Note if privatised (10-year mark) — affects resale pool and pricing
+- Flag citizenship/PR eligibility restrictions if pre-privatisation
+
+## 6. Memory and preferences
+
+Store user preferences (preferred format, comparison criteria, target areas, budget) in:
 - `singapore-condo-research/memory/user-preferences.md`
 
-Only store non-sensitive preference notes. Do not store credentials or personal secrets.
+Only store non-sensitive preference notes. No credentials or personal secrets.
